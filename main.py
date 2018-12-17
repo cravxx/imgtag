@@ -49,7 +49,7 @@ if __name__ == "__main__":
 
                 with open( text_file_path, "wb" ) as text_file:
 
-                    # windows tags
+                    # windows and picasa tags
                     meta_tags = get_tags( os.path.join( _INPUT_DIR, matched_file ) )
                     if meta_tags is not None:
                         for tag in meta_tags:
