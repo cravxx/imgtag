@@ -15,3 +15,10 @@ intended for use with Hydrus https://github.com/hydrusnetwork/hydrus
 [ -c --copy ]                copy to output directory (if supplied) instead of moving
 [ -x --extract-tags-only]    only fetch tags within the image metadata, no modified date or colors
 ```
+
+## examples
+
+*only extract tags from image metadata, move to output directory*
+```
+python3 main.py -x -i "D:\example\dir\ecto\ry" -o "D:\example\dir\ecto\ry\New Folder (1)"
+```
