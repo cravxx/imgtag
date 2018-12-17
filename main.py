@@ -19,15 +19,19 @@ parser.add_argument( '-i', '--input-path', type = PathType( exists = True, type 
                      help = "set the input path (default is the current directory)" )
 parser.add_argument( '-o', '--output-path', type = PathType( exists = True, type = 'dir' ),
                      help = "set the output path (default is the current directory)" )
+
 parser.add_argument( '-f', '--force', action = "store_true",
                      help = "will overwrite existing text files accompanying the images" )
 parser.add_argument( '-c', '--copy', action = "store_true",
                      help = "copy to output directory (if supplied) instead of moving" )
+parser.add_argument( '-x', '--extract-tags-only', action = "store_true",
+                     help = "only fetch tags within the image metadata, no modified date or colors" )
 
 args = parser.parse_args()
 
 _INPUT_DIR = os.getcwd() if args.input_path is None else args.input_path
-_OUTPUT_DIR = os.getcwd() if args.output_path is None else args.output_path
+# default is same directory as input
+_OUTPUT_DIR = args.input_path if args.output_path is None else args.output_path
 
 
 def write_tag( file, namespace = "", tag = "" ):
@@ -42,16 +46,8 @@ if __name__ == "__main__":
             text_file_path = Path( os.path.join( _OUTPUT_DIR, matched_file ) + ".txt" )
 
             if text_file_path.exists() == False or text_file_path.exists() and args.force:
+
                 with open( text_file_path, "wb" ) as text_file:
-                    # colors
-                    if not any( fnmatch( matched_file, pattern ) for pattern in color_exclude_list ):
-                        image_colors = get_colors( os.path.join( _INPUT_DIR, matched_file ) )
-                        if image_colors is not None:
-                            # pick first two
-                            logger.opt( ansi = True ).info( "[ <red> {} </red> ] matched colors: {} {}", matched_file,
-                                                            image_colors[ 0 ][ 0 ], image_colors[ 1 ][ 0 ] )
-                            write_tag( text_file, "color", image_colors[ 0 ][ 0 ] )
-                            write_tag( text_file, "color", image_colors[ 1 ][ 0 ] )
 
                     # windows tags
                     meta_tags = get_tags( os.path.join( _INPUT_DIR, matched_file ) )
@@ -60,13 +56,29 @@ if __name__ == "__main__":
                             logger.opt( ansi = True ).info( "[ <red> {} </red> ] metatag: {}", matched_file, tag )
                             write_tag( text_file, "metatag", tag.decode( 'utf-8' ) )
 
-                    d = datetime.strptime( time.ctime( os.path.getmtime( os.path.join( _INPUT_DIR, matched_file ) ) ),
-                                           "%a %b %d %H:%M:%S %Y" )
-                    write_tag( text_file, "modified", d.strftime( '%Y/%m/%d %H:%M:%S' ) )
-                    write_tag( text_file, "year", d.strftime( '%Y' ) )
+                    if not args.extract_tags_only:
 
-                    logger.opt( ansi = True ).info( "[ <red> {} </red> ] modified: {}", matched_file,
-                                                    d.strftime( '%Y/%m/%d %H:%M:%S' ) )
+                        # colors
+                        if not any( fnmatch( matched_file, pattern ) for pattern in color_exclude_list ):
+                            image_colors = get_colors( os.path.join( _INPUT_DIR, matched_file ) )
+                            if image_colors is not None:
+                                # pick first two
+                                logger.opt( ansi = True ).info( "[ <red> {} </red> ] matched colors: {} {}",
+                                                                matched_file,
+                                                                image_colors[ 0 ][ 0 ], image_colors[ 1 ][ 0 ] )
+                                write_tag( text_file, "color", image_colors[ 0 ][ 0 ] )
+                                write_tag( text_file, "color", image_colors[ 1 ][ 0 ] )
+
+                        # modified time
+
+                        d = datetime.strptime(
+                            time.ctime( os.path.getmtime( os.path.join( _INPUT_DIR, matched_file ) ) ),
+                            "%a %b %d %H:%M:%S %Y" )
+                        write_tag( text_file, "modified", d.strftime( '%Y/%m/%d %H:%M:%S' ) )
+                        write_tag( text_file, "year", d.strftime( '%Y' ) )
+
+                        logger.opt( ansi = True ).info( "[ <red> {} </red> ] modified: {}", matched_file,
+                                                        d.strftime( '%Y/%m/%d %H:%M:%S' ) )
 
                     if (_INPUT_DIR != _OUTPUT_DIR):
                         try:
@@ -88,5 +100,5 @@ if __name__ == "__main__":
                     "[ <red> {} </red> ] was skipped because a .txt file already exists. Rerun with the <green>-f --force</green> flag to process anyway",
                     matched_file )
 
-        except Exception as e:
-            print( e )
+        except Exception as err:
+            logger.error( err )
