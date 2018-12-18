@@ -10,7 +10,7 @@ from loguru import logger
 
 from PathType import PathType
 from color import get_colors
-from file_tags import get_tags, get_packet
+from file_tags import get_tags, get_packet, get_pre_packet, get_exif_data
 
 color_exclude_list = [ "*.webm", "*.mp4", "*.gif", "*.gifv" ]
 include_list = [ "*.webm", "*.mp4", "*.gif", "*.gifv", "*.jpg", "*.jpeg", "*.png" ]
