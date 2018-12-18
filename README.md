@@ -1,4 +1,4 @@
-# imagetag
+# imgtag
 tag images with basic info
   - dominant color
   - tags added by picasa and windows

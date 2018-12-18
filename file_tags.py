@@ -1,16 +1,26 @@
 import re
 
+from lxml import etree
+
+_NAMESPACES = { 'rdf': 'http://www.w3.org/1999/02/22-rdf-syntax-ns#',
+                'xmp': 'http://ns.adobe.com/xap/1.0/',
+                'dc': 'http://purl.org/dc/elements/1.1/',
+                'x': 'adobe:ns:meta/' }
+
+
 # works for both windows and picasa
 def get_tags( matched_file ):
+    x_packet = get_packet( matched_file )
+    if x_packet is not None:
+        return [ t.text for t in x_packet.iterfind( ".//rdf:li", _NAMESPACES ) ]
+    else:
+        return [ ]
+
+
+def get_packet( matched_file ):
     with open( matched_file, "rb" ) as imageFile:
-        d = imageFile.read()
-        xmp_start = d.find( b'<x:xmpmeta xmlns:x="adobe:ns:meta/' )
-        # xmp_end = d.find(b'</x:xmpmeta')
-        end_token = b'</x:xmpmeta>'
-        xmp_end = d.find( end_token )
-        if xmp_start is not -1 and xmp_end is not -1:
-            xmp_str = d[ xmp_start:xmp_end + len( end_token ) ]
-            #get rid of dupes by making a set
-            return list(set(re.findall( b'(?s)(?<=<rdf:li>).*?(?=</rdf:li>)', xmp_str )))
+        x_packet = re.search( b'(<\?xpacket.+begin.+>.*?<\?xpacket.+end.+>)', imageFile.read() )
+        if x_packet is not None:
+            return etree.fromstring( x_packet.group(), etree.XMLParser( ns_clean = True ) )
         else:
             return None

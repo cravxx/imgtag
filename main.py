@@ -2,6 +2,7 @@ import os
 import shutil
 import time
 import argparse
+
 from fnmatch import fnmatch
 from datetime import datetime
 from pathlib import Path
@@ -9,7 +10,7 @@ from loguru import logger
 
 from PathType import PathType
 from color import get_colors
-from file_tags import get_tags
+from file_tags import get_tags, get_packet
 
 color_exclude_list = [ "*.webm", "*.mp4", "*.gif", "*.gifv" ]
 include_list = [ "*.webm", "*.mp4", "*.gif", "*.gifv", "*.jpg", "*.jpeg", "*.png" ]
@@ -50,11 +51,13 @@ if __name__ == "__main__":
                 with open( text_file_path, "wb" ) as text_file:
 
                     # windows and picasa tags
-                    meta_tags = get_tags( os.path.join( _INPUT_DIR, matched_file ) )
-                    if meta_tags is not None:
-                        for tag in meta_tags:
+                    metadata_tags = get_tags( os.path.join( _INPUT_DIR, matched_file ) )
+                    if metadata_tags is not None:
+                        print( metadata_tags )
+                        for tag in metadata_tags:
                             logger.opt( ansi = True ).info( "[ <red> {} </red> ] metatag: {}", matched_file, tag )
-                            write_tag( text_file, "metatag", tag.decode( 'utf-8' ) )
+                            write_tag( text_file, "metatag", tag )
+
 
                     if not args.extract_tags_only:
 
@@ -70,7 +73,6 @@ if __name__ == "__main__":
                                 write_tag( text_file, "color", image_colors[ 1 ][ 0 ] )
 
                         # modified time
-
                         d = datetime.strptime(
                             time.ctime( os.path.getmtime( os.path.join( _INPUT_DIR, matched_file ) ) ),
                             "%a %b %d %H:%M:%S %Y" )
