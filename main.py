@@ -53,10 +53,10 @@ if __name__ == "__main__":
                     # windows and picasa tags
                     metadata_tags = get_tags( os.path.join( _INPUT_DIR, matched_file ) )
                     if metadata_tags is not None:
-                        print( metadata_tags )
-                        for tag in metadata_tags:
-                            logger.opt( ansi = True ).info( "[ <red> {} </red> ] metatag: {}", matched_file, tag )
-                            write_tag( text_file, "metatag", tag )
+                        for k in metadata_tags:
+                            for v in metadata_tags[k]:
+                                logger.opt( ansi = True ).info( "[ <red> {0} </red> ] {1}: {2}".format(matched_file, k, v) )
+                                write_tag( text_file, k, v )
 
 
                     if not args.extract_tags_only:
