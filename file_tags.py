@@ -11,11 +11,6 @@ _NAMESPACES = { 'rdf': 'http://www.w3.org/1999/02/22-rdf-syntax-ns#',
                 'MicrosoftPhoto': 'http://ns.microsoft.com/photo/1.0/' }
 
 
-def print_each(y):
-    for t in y:
-        print(t)
-
-# works for both windows and picasa
 def get_tags( matched_file ):
     x_packet = get_packet( matched_file )
     if x_packet is not None:
@@ -43,11 +38,11 @@ def get_tags( matched_file ):
 
         # windows Creators
         title = x_packet.iterfind( ".//dc:creator/rdf:Seq/rdf:li", _NAMESPACES )
-        tags[ "creators" ] = [ title_el.text for title_el in title if title_el is not None ]
+        tags[ "creator" ] = [ title_el.text for title_el in title if title_el is not None ]
 
         # windows Copyrights
         title = x_packet.iterfind( ".//dc:rights/rdf:Alt/rdf:li", _NAMESPACES )
-        tags[ "copyrights" ] = [ title_el.text for title_el in title if title_el is not None ]
+        tags[ "copyright" ] = [ title_el.text for title_el in title if title_el is not None ]
 
         return tags
     else:
