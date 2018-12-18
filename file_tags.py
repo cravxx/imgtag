@@ -12,10 +12,9 @@ _NAMESPACES = { 'rdf': 'http://www.w3.org/1999/02/22-rdf-syntax-ns#',
 
 
 def get_tags( matched_file ):
+    tags = { }
     x_packet = get_packet( matched_file )
     if x_packet is not None:
-
-        tags = {}
 
         #windows Title
         title = x_packet.iterfind( ".//dc:title/rdf:Alt/rdf:li", _NAMESPACES )
@@ -44,9 +43,7 @@ def get_tags( matched_file ):
         title = x_packet.iterfind( ".//dc:rights/rdf:Alt/rdf:li", _NAMESPACES )
         tags[ "copyright" ] = [ title_el.text for title_el in title if title_el is not None ]
 
-        return tags
-    else:
-        return [ ]
+    return tags
 
 
 def get_packet( matched_file ):
