@@ -1,7 +1,6 @@
 import PIL, PIL.ExifTags
 from PIL.ExifTags import TAGS
 import re
-import binascii
 
 from lxml import etree
 
@@ -67,9 +66,9 @@ def clean_exif( b ):
 def get_exif_data( matched_file ):
     img = PIL.Image.open( matched_file )
     return {
-        PIL.ExifTags.TAGS[ k ]: v
+        TAGS[ k ]: v
         for k, v in img._getexif().items()
-        if k in PIL.ExifTags.TAGS
+        if k in TAGS
     }
 
 
