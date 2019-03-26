@@ -18,6 +18,8 @@ color_exclude_list = [ "*.webm", "*.mp4", "*.gif", "*.gifv", "*.mov", "*.avi" ]
 include_list = [ "*.webm", "*.mp4", "*.gif", "*.gifv", "*.jpg", "*.jpeg", "*.png", "*.webp", "*.jpeg_large",
                  "*.jpg_large", "*.mov", "*.avi" ]
 
+detector = None
+
 parser = argparse.ArgumentParser( description = 'image processor / sorter' )
 parser.add_argument( '-i', '--input-path', type = PathType( exists = True, type = 'dir' ),
                      help = "set the input path (default is the current directory)" )
@@ -37,6 +39,12 @@ parser.add_argument( '-a', '--ai-detection', action = "store_true",
 
 args = parser.parse_args()
 
+if args.ai_detection:
+    detector = ObjectDetection()
+    detector.setModelTypeAsRetinaNet()
+    detector.setModelPath( os.path.join( os.getcwd(), "resnet50_coco_best_v2.0.1.h5" ) )
+    detector.loadModel()
+
 _INPUT_DIR = os.getcwd() if args.input_path is None else args.input_path
 # default is same directory as input
 _OUTPUT_DIR = args.input_path if args.output_path is None else args.output_path
@@ -47,12 +55,6 @@ def write_tag( file, namespace = "", tag = "" ):
 
 
 if __name__ == "__main__":
-
-    if args.ai_detection:
-        detector = ObjectDetection()
-        detector.setModelTypeAsRetinaNet()
-        detector.setModelPath( os.path.join( os.getcwd(), "resnet50_coco_best_v2.0.1.h5" ) )
-        detector.loadModel()
 
     for dirpath, dirnames, filenames in os.walk( _INPUT_DIR ):
         for matched_file in [ f for f in filenames if any( fnmatch( f, pattern ) for pattern in include_list ) ]:
