@@ -8,14 +8,15 @@ from fnmatch import fnmatch
 from datetime import datetime
 from pathlib import Path
 from loguru import logger
+from imageai.Detection import ObjectDetection
 
 from PathType import PathType
 from color import get_colors
 from file_tags import get_tags
 
-color_exclude_list = [ "*.webm", "*.mp4", "*.gif", "*.gifv", "*.mov" ]
+color_exclude_list = [ "*.webm", "*.mp4", "*.gif", "*.gifv", "*.mov", "*.avi" ]
 include_list = [ "*.webm", "*.mp4", "*.gif", "*.gifv", "*.jpg", "*.jpeg", "*.png", "*.webp", "*.jpeg_large",
-                 "*.jpg_large", "*.mov" ]
+                 "*.jpg_large", "*.mov", "*.avi" ]
 
 parser = argparse.ArgumentParser( description = 'image processor / sorter' )
 parser.add_argument( '-i', '--input-path', type = PathType( exists = True, type = 'dir' ),
@@ -25,10 +26,14 @@ parser.add_argument( '-o', '--output-path', type = PathType( exists = True, type
 
 parser.add_argument( '-c', '--copy', action = "store_true",
                      help = "copy to output directory (if supplied) instead of moving" )
-parser.add_argument( '-x', '--extract-tags-only', action = "store_true",
-                     help = "only fetch tags within the image metadata, no modified date or colors" )
-parser.add_argument( '-n', '--no-colors', action = "store_true",
-                     help = "don't calculate image color" )
+parser.add_argument( '-g', '--get-colors', action = "store_true",
+                     help = "calculate image color" )
+parser.add_argument( '-m', '--get-metadata', action = "store_true",
+                     help = "get image exif metadata" )
+parser.add_argument( '-f', '--get-file-info', action = "store_true",
+                     help = "get file info" )
+parser.add_argument( '-a', '--ai-detection', action = "store_true",
+                     help = "detect objects in the image using ImageAI" )
 
 args = parser.parse_args()
 
@@ -43,6 +48,12 @@ def write_tag( file, namespace = "", tag = "" ):
 
 if __name__ == "__main__":
 
+    if args.ai_detection:
+        detector = ObjectDetection()
+        detector.setModelTypeAsRetinaNet()
+        detector.setModelPath( os.path.join( os.getcwd(), "resnet50_coco_best_v2.0.1.h5" ) )
+        detector.loadModel()
+
     for dirpath, dirnames, filenames in os.walk( _INPUT_DIR ):
         for matched_file in [ f for f in filenames if any( fnmatch( f, pattern ) for pattern in include_list ) ]:
             try:
@@ -55,35 +66,48 @@ if __name__ == "__main__":
 
                 with open( text_file_path, "wb" ) as text_file:
 
-                    # write filename
-                    write_tag( text_file, "filename", matched_file[ :matched_file.rindex( "." ) ] )
+                    # object detection
+                    if args.ai_detection:
+                        detections = detector.detectObjectsFromImage(
+                            input_image = os.path.join( dirpath, matched_file ),
+                            output_image_path = os.path.join( _OUTPUT_DIR, "ai_" + unique_filename ),
+                            minimum_percentage_probability = 75 )
+                        for eachObject in detections:
+                            logger.opt( ansi = True ).info(
+                                "[ <red> {0} </red> ] {1}: {2}".format( matched_file, eachObject[ "name" ],
+                                                                        eachObject[ "percentage_probability" ] ) )
+                            write_tag( text_file, eachObject[ "name" ] )
+                        os.remove( os.path.join( _OUTPUT_DIR, "ai_" + unique_filename ) )
 
                     # windows and picasa tags
-                    try:
-                        metadata_tags = get_tags( os.path.join( dirpath, matched_file ) )
-                        if metadata_tags is not None:
-                            for k in metadata_tags:
-                                for v in metadata_tags[ k ]:
-                                    logger.opt( ansi = True ).info(
-                                        "[ <red> {0} </red> ] {1}: {2}".format( matched_file, k, v ) )
-                                    write_tag( text_file, k, v )
-                    except Exception as err:
-                        pass
+                    if args.get_metadata:
+                        try:
+                            metadata_tags = get_tags( os.path.join( dirpath, matched_file ) )
+                            if metadata_tags is not None:
+                                for k in metadata_tags:
+                                    for v in metadata_tags[ k ]:
+                                        logger.opt( ansi = True ).info(
+                                            "[ <red> {0} </red> ] {1}: {2}".format( matched_file, k, v ) )
+                                        write_tag( text_file, k, v )
+                        except Exception as err:
+                            pass
 
-                    if not args.extract_tags_only:
-                        # colors
-                        if not args.no_colors:
-                            if not any( fnmatch( matched_file, pattern ) for pattern in color_exclude_list ):
-                                image_colors = get_colors( os.path.join( dirpath, matched_file ) )
-                                if image_colors is not None:
-                                    # pick first two
-                                    logger.opt( ansi = True ).info( "[ <red> {} </red> ] matched colors: {} {}",
-                                                                    matched_file,
-                                                                    image_colors[ 0 ][ 0 ], image_colors[ 1 ][ 0 ] )
-                                    write_tag( text_file, "color", image_colors[ 0 ][ 0 ] )
-                                    write_tag( text_file, "color", image_colors[ 1 ][ 0 ] )
+                    # colors
+                    if args.get_colors:
+                        if not any( fnmatch( matched_file, pattern ) for pattern in color_exclude_list ):
+                            image_colors = get_colors( os.path.join( dirpath, matched_file ) )
+                            if image_colors is not None:
+                                # pick first two
+                                logger.opt( ansi = True ).info( "[ <red> {} </red> ] matched colors: {} {}",
+                                                                matched_file,
+                                                                image_colors[ 0 ][ 0 ], image_colors[ 1 ][ 0 ] )
+                                write_tag( text_file, "color", image_colors[ 0 ][ 0 ] )
+                                write_tag( text_file, "color", image_colors[ 1 ][ 0 ] )
 
-                        # modified time
+                    # file info
+                    if args.get_file_info:
+                        write_tag( text_file, "filename", matched_file[ :matched_file.rindex( "." ) ] )
+
                         d = datetime.strptime(
                             time.ctime( os.path.getmtime( os.path.join( dirpath, matched_file ) ) ),
                             "%a %b %d %H:%M:%S %Y" )
