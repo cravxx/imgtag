@@ -8,7 +8,6 @@ from fnmatch import fnmatch
 from datetime import datetime
 from pathlib import Path
 from loguru import logger
-from imageai.Detection import ObjectDetection
 
 from PathType import PathType
 from color import get_colors
@@ -18,7 +17,6 @@ color_exclude_list = [ "*.webm", "*.mp4", "*.gif", "*.gifv", "*.mov", "*.avi" ]
 include_list = [ "*.webm", "*.mp4", "*.gif", "*.gifv", "*.jpg", "*.jpeg", "*.png", "*.webp", "*.jpeg_large",
                  "*.jpg_large", "*.mov", "*.avi" ]
 
-detector = None
 
 parser = argparse.ArgumentParser( description = 'image processor / sorter' )
 parser.add_argument( '-i', '--input-path', type = PathType( exists = True, type = 'dir' ),
@@ -34,16 +32,8 @@ parser.add_argument( '-m', '--get-metadata', action = "store_true",
                      help = "get image exif metadata" )
 parser.add_argument( '-f', '--get-file-info', action = "store_true",
                      help = "get file info" )
-parser.add_argument( '-a', '--ai-detection', action = "store_true",
-                     help = "detect objects in the image using ImageAI" )
 
 args = parser.parse_args()
-
-if args.ai_detection:
-    detector = ObjectDetection()
-    detector.setModelTypeAsRetinaNet()
-    detector.setModelPath( os.path.join( os.getcwd(), "resnet50_coco_best_v2.0.1.h5" ) )
-    detector.loadModel()
 
 _INPUT_DIR = os.getcwd() if args.input_path is None else args.input_path
 # default is same directory as input
@@ -67,19 +57,6 @@ if __name__ == "__main__":
                 text_file_path = Path( os.path.join( _OUTPUT_DIR, unique_filename ) + ".txt" )
 
                 with open( text_file_path, "wb" ) as text_file:
-
-                    # object detection
-                    if args.ai_detection:
-                        detections = detector.detectObjectsFromImage(
-                            input_image = os.path.join( dirpath, matched_file ),
-                            output_image_path = os.path.join( _OUTPUT_DIR, "ai_" + unique_filename ),
-                            minimum_percentage_probability = 75 )
-                        for eachObject in detections:
-                            logger.opt( ansi = True ).info(
-                                "[ <red> {0} </red> ] {1}: {2}".format( matched_file, eachObject[ "name" ],
-                                                                        eachObject[ "percentage_probability" ] ) )
-                            write_tag( text_file, eachObject[ "name" ] )
-                        os.remove( os.path.join( _OUTPUT_DIR, "ai_" + unique_filename ) )
 
                     # windows and picasa tags
                     if args.get_metadata:

@@ -12,12 +12,13 @@ intended for use with Hydrus https://github.com/hydrusnetwork/hydrus
 [ -i --input-path ]          set the input path (default is the current directory)
 [ -o --output-path ]         set the output path (default is same as input)
 
-[ -f --force ]               will overwrite existing text files accompanying the images
 [ -c --copy ]                copy to output directory (if supplied) instead of moving
-[ -x --extract-tags-only]    only fetch tags within the image metadata, no modified date or colors
+[ -m --get-metadata ]        get image exif metadata and windows tags
+[ -g --get-color ]           calculate image color
+[ -f --get-file-info ]       get filename and date modified
 ```
 
-*only extract tags from image metadata, move to output directory*
+*get metadata and file info, then move to output directory*
 ```
-python3 main.py -x -i "D:\example\dir\ecto\ry" -o "D:\example\dir\ecto\ry\New Folder (1)"
+python3 main.py -m -f -i "D:\example\dir\ecto\ry" -o "D:\example\dir\ecto\ry\New Folder (1)"
 ```

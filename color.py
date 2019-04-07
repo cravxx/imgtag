@@ -23,9 +23,9 @@ lab_def_colors = {
 def blur_and_resize( image ):
     image = Image.open( image, 'r' )
     image = image.convert( 'RGB' )
+    image = image.resize( (50, 50) )
     image = image.filter( ImageFilter.GaussianBlur( 30 ) )
-    image = image.resize( (150, 150) )
-    result = image.convert( 'P', palette = Image.ADAPTIVE, colors = 20 )
+    result = image.convert( 'P', palette = Image.ADAPTIVE, colors = 10 )
     result.putalpha( 0 )
     return result
 
@@ -53,7 +53,7 @@ def get_colors( image_path ):
         y = 0
         results = { }
 
-        for co in modified_image.getcolors( (150 * 150) ):
+        for co in modified_image.getcolors( (50 * 50) ):
             l = luminance( co[ 1 ][ 0 ], co[ 1 ][ 1 ], co[ 1 ][ 2 ] )
             if check_against_dict( l, color_dict ):
                 color_dict[ y ] = json.dumps(
