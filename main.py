@@ -98,7 +98,6 @@ if __name__ == "__main__":
                                                         d.strftime( '%Y/%m/%d %H:%M:%S' ) )
 
                     if (_INPUT_DIR != _OUTPUT_DIR):
-                        try:
                             if args.copy:
                                 logger.opt( ansi = True ).info( "[ <red> {} </red> ] copied to: {}", matched_file,
                                                                 os.path.join( _OUTPUT_DIR, unique_filename ) )
@@ -109,8 +108,11 @@ if __name__ == "__main__":
                                                                 os.path.join( _OUTPUT_DIR, unique_filename ) )
                                 shutil.move( os.path.join( dirpath, matched_file ),
                                              os.path.join( _OUTPUT_DIR, unique_filename ) )
-                        except Exception as err:
-                            logger.error( err )
+                    else:
+                        logger.opt( ansi = True ).info( "[ <red> {} </red> ] renamed to: {}", matched_file,
+                                                        os.path.join( _OUTPUT_DIR, unique_filename ) )
+                        shutil.move( os.path.join( dirpath, matched_file ),
+                                     os.path.join( _OUTPUT_DIR, unique_filename ) )
 
             except Exception as err:
                 logger.error( err )
